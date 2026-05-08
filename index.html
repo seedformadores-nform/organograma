@@ -1,0 +1,51 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  Search, 
+  ZoomIn, 
+  ZoomOut, 
+  X,
+  Mail,
+  Printer,
+  User
+} from 'lucide-react';
+
+// Paleta de Cores baseada na identidade visual
+const COLORS = {
+  purple: '#8e44ad', // Chefia
+  green: '#2fc076',  // COFEM
+  blue: '#33adff',   // CGDF
+  orange: '#ff9233', // CAFF
+  pink: '#ed4b82',   // Destaque Busca
+  slate: '#64748b',
+  bg: '#f1f5f9'
+};
+
+const initialData = {
+  chief: {
+    name: 'Gilmara',
+    role: 'Chefia',
+    photoUrl: 'https://i.pravatar.cc/150?u=gilmara',
+    objectPosition: 'center 15%',
+    email: 'gilmarafw@seed.pr.gov.br',
+    staff: [
+      { id: 'a1', name: 'Euza', role: 'Assessora da Chefia', photoUrl: 'https://lh3.googleusercontent.com/d/1Frp32T7kuhE7lHDySHF7kkRqFVgKjfBF', objectPosition: 'center 15%', email: 'euzacagnato@seed.pr.gov.br' },
+      { id: 'a2', name: 'Giselle', role: 'Técnica do Ganhando o Mundo', photoUrl: 'https://lh3.googleusercontent.com/d/1H6yotUSb2YXvFuEJbCcThilMTJWj6DSd', objectPosition: 'center 15%', email: 'gisellefs@seed.pr.gov.br' },
+      { id: 'a3', name: 'Sonia', role: 'Assessora Técnica', photoUrl: 'https://lh3.googleusercontent.com/d/1Y5Z-Tu9Hi6wQhkr3a5ufa4nRUaY9urJr', objectPosition: 'center 15%', email: 'soninhafreitas@seed.pr.gov.br' }
+    ]
+  },
+  coordinations: [
+    {
+      id: 'c1',
+      title: 'COFEM',
+      coordinator: 'Jociana',
+      role: 'Coordenação de Formação e Elaboração de Materiais',
+      color: COLORS.green,
+      photoUrl: 'https://lh3.googleusercontent.com/d/1O6QgwNYBCgwJvKWC4PkQM8CZkgAdOqVU',
+      objectPosition: 'center 15%',
+      email: 'jocianabill@seed.pr.gov.br',
+      columns: 2, 
+      team: [
+        { id: 'ingrid', name: 'Ingrid', role: 'Assessora da COFEM', photoUrl: 'https://lh3.googleusercontent.com/d/1664dsxq94vD23xj8fuiTpOuD5QTOlaXZ', email: 'irtellez@seed.pr.gov.br' },
+        { id: 'andreia', name: 'ANDREIA', role: 'Equipe de Apoio Formativo', photoUrl: '
