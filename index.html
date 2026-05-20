@@ -53,13 +53,14 @@
             chief: {
                 name: 'Gilmara',
                 role: 'Chefia',
-                photoUrl: 'https://i.pravatar.cc/150?u=gilmara',
-                objectPosition: 'center 15%',
+                photoUrl: 'https://lh3.googleusercontent.com/d/1sJpuIFqIGwUs56kQj6exDM9O_ezFL96v',
+                objectPosition: '30% 15%', // Ajustado para centralizar o rosto horizontalmente na foto
+                zoom: 1.15, // Zoom para médio plano perfeito
                 email: 'gilmarafw@seed.pr.gov.br',
                 staff: [
                     { id: 'a1', name: 'Euza', role: 'Assessora da Chefia', photoUrl: 'https://lh3.googleusercontent.com/d/1Frp32T7kuhE7lHDySHF7kkRqFVgKjfBF', objectPosition: 'center 15%', email: 'euzacagnato@seed.pr.gov.br' },
-                    { id: 'a2', name: 'Giselle', role: 'Técnica do Ganhando o Mundo', photoUrl: 'https://lh3.googleusercontent.com/d/1H6yotUSb2YXvFuEJbCcThilMTJWj6DSd', objectPosition: 'center 15%', email: 'gisellefs@seed.pr.gov.br' },
-                    { id: 'a3', name: 'Sonia', role: 'Assessora Técnica', photoUrl: 'https://lh3.googleusercontent.com/d/1Y5Z-Tu9Hi6wQhkr3a5ufa4nRUaY9urJr', objectPosition: 'center 15%', email: 'soninhafreitas@seed.pr.gov.br' }
+                    { id: 'a2', name: 'Giselle', role: 'Assessora Ganhando o Mundo', photoUrl: 'https://lh3.googleusercontent.com/d/1H6yotUSb2YXvFuEJbCcThilMTJWj6DSd', objectPosition: 'center 15%', email: 'gisellefs@seed.pr.gov.br' },
+                    { id: 'a3', name: 'Sonia', role: 'Assessora de Tecnologias Educacionais', photoUrl: 'https://lh3.googleusercontent.com/d/1Y5Z-Tu9Hi6wQhkr3a5ufa4nRUaY9urJr', objectPosition: 'center 15%', email: 'soninhafreitas@seed.pr.gov.br' }
                 ]
             },
             coordinations: [
@@ -178,7 +179,7 @@
             return (
                 <div onClick={() => onClick(person, color)} className={`flex items-center gap-3 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all h-full w-full cursor-pointer group ${matches ? 'ring-4 ring-pink-500 scale-[1.03] z-10 shadow-pink-100' : 'hover:border-slate-300 hover:shadow-md active:scale-95'}`}>
                     <div className="w-14 h-14 rounded-full border-2 border-slate-100 overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform" style={{ borderColor: color || COLORS.slate }}>
-                        <img src={person.photoUrl} alt={person.name} className="w-full h-full object-cover" style={{ objectPosition: person.objectPosition || 'center 15%', transform: `scale(${person.zoom || 1})` }} />
+                        <img src={person.photoUrl} alt={person.name} className="w-full h-full object-cover transition-transform" style={{ objectPosition: person.objectPosition || 'center 15%', transform: `scale(${person.zoom || 1})` }} />
                     </div>
                     <div className="overflow-hidden">
                         <h4 className="font-extrabold text-slate-800 text-[11px] uppercase leading-tight truncate">{person.name}</h4>
@@ -249,7 +250,15 @@
                         <div className="flex flex-col items-center mb-24 relative">
                             <div style={{ borderTop: `10px solid ${COLORS.purple}` }} className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-200 text-center w-[450px] relative z-10 cursor-pointer print:shadow-none print:border-t-4" onClick={() => handleSelect(initialData.chief, COLORS.purple)}>
                                 <div className="w-36 h-36 rounded-full border-8 border-white shadow-xl overflow-hidden mx-auto -mt-24 mb-6">
-                                    <img src={initialData.chief.photoUrl} alt="Gilmara" className="w-full h-full object-cover" style={{ objectPosition: initialData.chief.objectPosition }} />
+                                    <img 
+                                        src={initialData.chief.photoUrl} 
+                                        alt="Gilmara" 
+                                        className="w-full h-full object-cover transition-transform duration-500" 
+                                        style={{ 
+                                            objectPosition: initialData.chief.objectPosition,
+                                            transform: `scale(${initialData.chief.zoom || 1})`
+                                        }} 
+                                    />
                                 </div>
                                 <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{initialData.chief.name}</h1>
                                 <p className="text-lg font-black text-purple-600 uppercase tracking-widest mt-2">{initialData.chief.role}</p>
