@@ -1,292 +1,804 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organograma - Formadores em Ação</title>
-    <!-- Tailwind CSS para o visual -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Interativo - Autoavaliação Resumo Expandido GMP</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React e Babel para rodar o código no navegador -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfbf7;
+            color: #334155;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (max-width: 640px) {
+            .chart-wrapper {
+                height: 280px;
+            }
+        }
+
+        .tab-btn.active {
+            border-bottom: 4px solid #0f766e;
+            color: #0f766e;
+            font-weight: 700;
+            background-color: #f0fdfa;
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .radio-custom:checked + label {
+            background-color: #0f766e;
+            color: white;
+            border-color: #0f766e;
+        }
+
+        .radio-custom-partial:checked + label {
+            background-color: #b45309;
+            color: white;
+            border-color: #b45309;
+        }
+
+        .radio-custom-no:checked + label {
+            background-color: #b91c1c;
+            color: white;
+            border-color: #b91c1c;
+        }
+
+        /* Estilos de Impressão */
+        .print-only-container {
+            display: none !important;
+        }
+
         @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; padding: 0 !important; }
-            .print-full { max-width: none !important; width: 100% !important; transform: none !important; margin: 0 !important; }
-            .grid { display: block !important; }
-            .grid > div { margin-bottom: 15px !important; page-break-inside: avoid; }
+            nav,
+            button,
+            header,
+            footer,
+            .no-print,
+            .tab-btn,
+            textarea {
+                display: none !important;
+            }
+
+            .view-section {
+                display: block !important;
+                page-break-inside: avoid;
+                margin-bottom: 2rem;
+            }
+
+            .hidden {
+                display: block !important;
+            }
+
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .print-only-container {
+                display: block !important;
+                margin-top: 0.5rem;
+                padding: 0.75rem;
+                background-color: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 0.375rem;
+                font-style: italic;
+                color: #1e293b !important;
+            }
         }
     </style>
 </head>
-<body class="bg-[#f1f5f9]">
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-        
-        // Ícones em SVG simples
-        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
-        const IconZoomIn = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>;
-        const IconZoomOut = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="8" x2="14" y1="11" y2="11"/></svg>;
-        const IconPrinter = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
-        const IconX = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
-        const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
-        const IconChevronDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-9"/></svg>;
-        const IconChevronRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
+<body class="min-h-screen flex flex-col">
 
-        const COLORS = {
-            purple: '#8e44ad',
-            green: '#2fc076',
-            blue: '#33adff',
-            orange: '#ff9233',
-            pink: '#ed4b82',
-            slate: '#64748b'
-        };
+<!-- Chosen Palette: Warm Neutrals with Teal and Amber accents -->
+<!-- Application Structure Plan: single-page dashboard layout functioning as an interactive self-assessment tool. -->
+<!-- Visualization & Content Choices: Doughnut and Radar charts on Canvas for general state evaluation. No SVG or Mermaid used. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 
-        const initialData = {
-            chief: {
-                name: 'Gilmara',
-                role: 'Chefia',
-                photoUrl: 'https://lh3.googleusercontent.com/d/1sJpuIFqIGwUs56kQj6exDM9O_ezFL96v',
-                objectPosition: '30% 15%', // Ajustado para centralizar o rosto horizontalmente na foto
-                zoom: 1.15, // Zoom para médio plano perfeito
-                email: 'gilmarafw@seed.pr.gov.br',
-                staff: [
-                    { id: 'a1', name: 'Euza', role: 'Assessora da Chefia', photoUrl: 'https://lh3.googleusercontent.com/d/1Frp32T7kuhE7lHDySHF7kkRqFVgKjfBF', objectPosition: 'center 15%', email: 'euzacagnato@seed.pr.gov.br' },
-                    { id: 'a2', name: 'Giselle', role: 'Assessora Ganhando o Mundo', photoUrl: 'https://lh3.googleusercontent.com/d/1H6yotUSb2YXvFuEJbCcThilMTJWj6DSd', objectPosition: 'center 15%', email: 'gisellefs@seed.pr.gov.br' },
-                    { id: 'a3', name: 'Sonia', role: 'Assessora de Tecnologias Educacionais', photoUrl: 'https://lh3.googleusercontent.com/d/1Y5Z-Tu9Hi6wQhkr3a5ufa4nRUaY9urJr', objectPosition: 'center 15%', email: 'soninhafreitas@seed.pr.gov.br' }
-                ]
+<header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200 no-print">
+
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+
+        <div>
+            <h1 class="text-2xl font-bold text-teal-800">
+                🎓 Programa Ganhando o Mundo Professor
+            </h1>
+
+            <p class="text-sm text-gray-500">
+                Instrumento Interativo de Autoavaliação do Resumo Expandido
+            </p>
+        </div>
+
+        <div class="flex flex-col items-end">
+            <span class="text-sm font-semibold mb-1">Progresso Geral</span>
+
+            <div class="w-48 bg-gray-200 rounded-full h-3">
+                <div id="global-progress-bar"
+                     class="bg-teal-600 h-3 rounded-full transition-all duration-500"
+                     style="width:0%">
+                </div>
+            </div>
+
+            <span id="global-progress-text"
+                  class="text-xs text-gray-500 mt-1">
+                0% Concluído
+            </span>
+        </div>
+
+    </div>
+
+    <nav class="max-w-6xl mx-auto px-4 mt-2 flex overflow-x-auto gap-2">
+
+        <button onclick="app.navigate('dashboard')"
+                class="tab-btn active px-4 py-3 text-sm font-medium text-gray-600 rounded-t-lg whitespace-nowrap">
+            📊 Painel de Controle
+        </button>
+
+        <button onclick="app.navigate('bloco1')"
+                class="tab-btn px-4 py-3 text-sm font-medium text-gray-600 rounded-t-lg whitespace-nowrap">
+            📚 Bloco 1: Transposição
+        </button>
+
+        <button onclick="app.navigate('bloco2')"
+                class="tab-btn px-4 py-3 text-sm font-medium text-gray-600 rounded-t-lg whitespace-nowrap">
+            🏛 Bloco 2: Estrutura
+        </button>
+
+        <button onclick="app.navigate('bloco3')"
+                class="tab-btn px-4 py-3 text-sm font-medium text-gray-600 rounded-t-lg whitespace-nowrap">
+            ✍️ Bloco 3: Formatação
+        </button>
+
+    </nav>
+
+</header>
+
+<main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
+
+    <!-- MODAL DE FALLBACK DE IMPRESSÃO (Caso o iframe bloqueie a ação automática) -->
+    <div id="printFallbackModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50 no-print">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl border border-gray-100">
+            <h3 class="text-xl font-bold text-teal-800 mb-3 flex items-center gap-2">
+                📢 Comando de Impressão Bloqueado
+            </h3>
+            <p class="text-gray-600 text-sm leading-relaxed mb-4">
+                Por questões de segurança, seu navegador ou o ambiente de visualização atual bloqueou o acionamento automático da impressão.
+            </p>
+            <div class="bg-teal-50 border-l-4 border-teal-600 p-3 rounded-r-md mb-4 text-xs text-teal-950 font-medium">
+                Pressione a combinação de teclas <strong class="bg-teal-100 px-1.5 py-0.5 rounded text-teal-800">Ctrl + P</strong> (ou <strong class="bg-teal-100 px-1.5 py-0.5 rounded text-teal-800">Cmd + P</strong> no Mac) em seu teclado para abrir a tela de salvamento em PDF / Impressão.
+            </div>
+            <button onclick="document.getElementById('printFallbackModal').classList.add('hidden')" 
+                    class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-2 px-4 rounded transition-colors text-sm">
+                Entendi, Fechar
+            </button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+
+    <section id="view-dashboard" class="view-section block">
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                👋 Olá, Professor(a) Intercambista!
+            </h2>
+
+            <p class="text-gray-600 leading-relaxed mb-4">
+                Este painel foi desenvolvido para ajudá-lo na jornada de transposição do seu Projeto e Relato de Intervenção para a estrutura acadêmica de um <strong>Resumo Expandido</strong>. Como critério mínimo para elegibilidade e futura publicação, seu trabalho científico deverá estar em perfeita conformidade com as normas estipuladas no template oficial no Google Classroom.
+            </p>
+
+            <p class="text-gray-600 leading-relaxed">
+                Utilize as abas superiores para navegar pelos blocos de avaliação e analisar criticamente o seu material antes de submetê-lo ao mentor. Considere relatar as suas questões e dificuldades após cada tópico para receber uma devolutiva mais precisa do seu mentor. Após concluir a análise, certifique-se de imprimir esta autoavaliação e anexá-la ao seu Resumo Expandido diretamente na área de atividades do Google Classroom.
+            </p>
+
+
+            <p class="text-gray-600 leading-relaxed mt-4">
+              <strong>Esta autoavaliação deverá ser entregue junto ao Resumo Expandido em 17 de agosto de 2026.</strong>
+            </p>
+
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+                <h3 class="text-lg font-bold text-gray-800 mb-2 text-center">
+                    🎯 Nível de Prontidão do Resumo
+                </h3>
+
+                <div class="chart-wrapper">
+                    <canvas id="readinessChart"></canvas>
+                </div>
+
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+                <h3 class="text-lg font-bold text-gray-800 mb-2 text-center">
+                    🛠 Análise de Desempenho por Bloco
+                </h3>
+
+                <div class="chart-wrapper">
+                    <canvas id="radarChart"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="mt-8 text-center no-print">
+            <button onclick="app.navigate('bloco1')"
+                    class="bg-teal-700 hover:bg-teal-800 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors text-lg">
+                Iniciar Autoavaliação ➜
+            </button>
+        </div>
+
+    </section>
+
+    <!-- BLOCO 1 -->
+
+    <section id="view-bloco1" class="view-section hidden">
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">
+                📚 Bloco 1: Transposição Pedagógica e Consistência Teórica
+            </h2>
+
+            <p class="text-gray-600">
+                Nesta seção, avalie se o seu texto superou o tom meramente descritivo (o relato cronológico de fatos) e alcançou profundidade teórica (a justificativa científica das ações).
+            </p>
+
+        </div>
+
+        <div id="content-bloco1" class="space-y-6"></div>
+
+    </section>
+
+    <!-- BLOCO 2 -->
+
+    <section id="view-bloco2" class="view-section hidden">
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">
+                🏛 Bloco 2: Estrutura Acadêmica e Alinhamento Pedagógico
+            </h2>
+
+            <p class="text-gray-600">
+                Avalie a coerência interna do seu texto e se ele atende à estrutura padrão obrigatória estipulada pelo do Resumo Expandido no Google Classroom.
+            </p>
+
+        </div>
+
+        <div id="content-bloco2" class="space-y-6"></div>
+
+    </section>
+
+    <!-- BLOCO 3 -->
+
+    <section id="view-bloco3" class="view-section hidden">
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">
+                ✍️ Bloco 3: Formatação, Normas ABNT e Uso de Evidências
+            </h2>
+
+            <p class="text-gray-600">
+                Nesta seção, analise se o trabalho respeita os critérios de formatação do Template do Resumo Expandido e se os dados apresentados sustentam os resultados da sua intervenção.
+            </p>
+
+        </div>
+
+        <div id="content-bloco3" class="space-y-6 mb-8"></div>
+
+        <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center no-print">
+
+            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                ✅ Finalização da Autoavaliação
+            </h3>
+
+            <p class="text-gray-600 mb-6">
+                Após concluir sua análise crítica, clique abaixo para abrir a impressão do documento no seu computador.
+            </p>
+
+            <button id="printButton"
+                    type="button"
+                    class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-colors">
+                🖨 Imprimir / Salvar em PDF
+            </button>
+
+        </div>
+
+    </section>
+
+</main>
+
+<footer class="bg-gray-800 text-gray-400 py-6 mt-auto no-print">
+
+    <div class="max-w-6xl mx-auto px-4 text-center text-sm">
+
+        <p>
+            🌎 Programa Ganhando o Mundo Professor - SEED-PR
+        </p>
+
+        <p class="mt-1">
+            Ferramenta de apoio metodológico focada no desenvolvimento do professor-pesquisador.
+        </p>
+
+    </div>
+
+</footer>
+
+<script>
+
+const appData = {
+
+    bloco1: {
+        id: 'bloco1',
+        questions: [
+            {
+                id: 'b1_q1',
+                text: '1. **Fundamentação Teórica:** Além de retomar os conceitos do projeto de intervenção, expandi a fundamentação teórica trazendo dois ou mais autores que dialogam entre si, concordam ou se complementam para construir as reflexões sobre a intervenção?'
             },
-            coordinations: [
-                {
-                    id: 'c1',
-                    title: 'COFEM',
-                    coordinator: 'Jociana',
-                    role: 'Coordenação de Formação e Elaboração de Materiais',
-                    color: COLORS.green,
-                    photoUrl: 'https://lh3.googleusercontent.com/d/1O6QgwNYBCgwJvKWC4PkQM8CZkgAdOqVU',
-                    objectPosition: 'center 15%',
-                    email: 'jocianabill@seed.pr.gov.br',
-                    columns: 2, 
-                    team: [
-                        { id: 'ingrid', name: 'Ingrid', role: 'Assessora da COFEM', photoUrl: 'https://lh3.googleusercontent.com/d/1664dsxq94vD23xj8fuiTpOuD5QTOlaXZ', email: 'irtellez@seed.pr.gov.br' },
-                        { id: 'andreia', name: 'ANDREIA', role: 'Equipe de Apoio Formativo', photoUrl: 'https://lh3.googleusercontent.com/d/1rQR3X78lY_ABHzeL7NienU2Qyt9P1pHS', email: 'andreiamonteiro@seed.pr.gov.br' },
-                        { id: 'denise_cofem', name: 'DENISE', role: 'Equipe de Apoio Formativo', photoUrl: 'https://lh3.googleusercontent.com/d/14PbbHaXeAwFVXUGvoihciW9v6LOJ3qu5', email: 'denise_colatusso@seed.pr.gov.br' },
-                        { id: 'fabiana', name: 'FABIANA', role: 'Equipe de Apoio Formativo', photoUrl: 'https://lh3.googleusercontent.com/d/1e_-XanJfAh8ESdRVWHRugYf5SvOsbejf', email: 'fabianastolf@seed.pr.gov.br' },
-                        { id: 'neide', name: 'NEIDE', role: 'Equipe de Apoio Formativo', photoUrl: 'https://lh3.googleusercontent.com/d/1d3gX5zZpbsuIy4Bm_kiu_N6wu8DG0ius', email: 'neideiara@seed.pr.gov.br' },
-                        { id: 'adriele', name: 'Adriele', role: 'Técnica de Língua Espanhola', photoUrl: 'https://lh3.googleusercontent.com/d/128K65eVyhzTuYCut4U9EtmYEBkMNwPgQ', email: 'adrieleleski@seed.pr.gov.br' },
-                        { id: 'alessandro_c', name: 'Alessandro Cavassin', role: 'Técnico de Sociologia', photoUrl: 'https://lh3.googleusercontent.com/d/1ZrnbLzAf0Q6lZwlrZHVNApudiQdPugAc', objectPosition: 'center 35%', zoom: 1.15, email: 'alessandrocalves@seed.pr.gov.br' },
-                        { id: 'alessandro_r', name: 'Alessandro Reina', role: 'Técnico de Filosofia', photoUrl: 'https://lh3.googleusercontent.com/d/1V-sXNuii0sSx5-KYrDmuQsCouTPatiRU', objectPosition: 'center 35%', zoom: 1.05, email: 'alessandroreina@seed.pr.gov.br' },
-                        { id: 'ana_paula_b', name: 'Ana Paula Barbosa', role: 'Técnica de Filosofia / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1leuihCgb022WePQeV7020I_mNvQBFHS9', email: 'nanashue@seed.pr.gov.br' },
-                        { id: 'ana_paula_i', name: 'Ana Paula Istschuk', role: 'Técnica de Língua Portuguesa', photoUrl: 'https://lh3.googleusercontent.com/d/1AZy-hASG5TmRTqu_GcAygnL-HgXapvFn', email: 'kkpi@seed.pr.gov.br' },
-                        { id: 'caroline', name: 'Caroline', role: 'Técnica de Matemática', photoUrl: 'https://lh3.googleusercontent.com/d/1QZKoo-0GhNWgZsFfTuAk2NmZHHiVH8K6', email: 'carocardoso@seed.pr.gov.br' },
-                        { id: 'daiana', name: 'Daiana', role: 'Técnica de Língua Portuguesa', photoUrl: 'https://lh3.googleusercontent.com/d/1Xqxh9Ja-NiN1qhKiNnwXLTySNiPp9Eue', email: 'daiana@seed.pr.gov.br' },
-                        { id: 'elenice', name: 'Elenice', role: 'Técnica de Arte / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1mV3lpgkBhhzJE97GjVmJ91rFw21A47Fz', email: 'guterville@seed.pr.gov.br' },
-                        { id: 'emanuelly', name: 'Emanuelle', role: 'Técnica de Matemática / Educação Financeira', photoUrl: 'https://lh3.googleusercontent.com/d/1SDmSe_a0xZ4_F3vnlYuPQDz3gwiTqBkZ', email: 'emanuellemanu99@seed.pr.gov.br' },
-                        { id: 'engelly', name: 'Enegelly', role: 'Técnica de História / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1PtGzTygsUzm3bzWbIKa5vAIAv_wiyWhB', email: 'enegelly@seed.pr.gov.br' },
-                        { id: 'fabiano', name: 'Fabiano', role: 'Técnico de Matemática', photoUrl: 'https://lh3.googleusercontent.com/d/1II74YOn799WlNDxRy2Xz8CM_QDu5EuFS', email: 'fabianoferrazza@seed.pr.gov.br' },
-                        { id: 'francine', name: 'Francine', role: 'Técnica de Educação Física / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1m3gyfngktp7Csdjf_EYjlU7ZKoVrt9pT', email: 'francinecruz@seed.pr.gov.br' },
-                        { id: 'gabriela', name: 'Gabriela', role: 'Técnica de Língua Inglesa', photoUrl: 'https://lh3.googleusercontent.com/d/13ClAQ2-nQWKcDFHyPhMdR2E7bBUzz1dU', email: 'gabrielamanieri@seed.pr.gov.br' },
-                        { id: 'liziane', name: 'Liziane', role: 'Técnica de Física / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1S-O__EWAO4ErYEW5LNqU8Hp35m_AI13Q', email: 'lizibugalski@seed.pr.gov.br' },
-                        { id: 'maiara', name: 'Maiara', role: 'Técnica de Sociologia', photoUrl: 'https://lh3.googleusercontent.com/d/1NZyP8mSIFWl1HZa8vKliaz-nbaL4o8jn', email: 'maiarabarroscs@seed.pr.gov.br' },
-                        { id: 'marcia', name: 'Marcia', role: 'Técnica de Química / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1gSAOqyfqiFmjQYvbe-cnf1iQCjkaBcAu', email: 'nascimentoufprbr@seed.pr.gov.br' },
-                        { id: 'marcos', name: 'Marcos', role: 'Técnico de Geografia / Projeto Integrador', photoUrl: 'https://lh3.googleusercontent.com/d/1TLrCI5-Rkmb0NaXC-wyyJRUVLfY2GBdy', email: 'marcosqueiroz@seed.pr.gov.br' },
-                        { id: 'marina', name: 'Marina', role: 'Técnica de Língua Portuguesa', photoUrl: 'https://lh3.googleusercontent.com/d/1LfX0qNJEIm9PrylioABg6jPd_gtFJShD', email: 'marina.persegona@seed.pr.gov.br' },
-                        { id: 'michele_cofem', name: 'Michele', role: 'Técnica de Biologia / Ciências', photoUrl: 'https://lh3.googleusercontent.com/d/1Ad05DAKvmZWII0hkVxR4hKuMCx8KxHM3', objectPosition: 'center 35%', zoom: 1.15, email: 'michele_dias@seed.pr.gov.br' }
-                    ]
-                },
-                {
-                    id: 'c2',
-                    title: 'CGDF',
-                    coordinator: 'Thiago',
-                    role: 'Coordenação de Gestão de Dados da Formação',
-                    color: COLORS.blue,
-                    photoUrl: 'https://lh3.googleusercontent.com/d/1pcpXqD4szNhyM0oRqOz3qU_ig3UJSCtf',
-                    objectPosition: 'center 15%',
-                    email: 'thiagopiola@seed.pr.gov.br',
-                    columns: 1, 
-                    team: [
-                        { id: 'claudia', name: 'Cláudia', role: 'Assessora da CGDF', photoUrl: 'https://lh3.googleusercontent.com/d/1lKQ9Ofe8DCmKrVwyCGNGfIgUBeWeWW0p', email: 'claudiabilek@seed.pr.gov.br' },
-                        { id: 'eliane', name: 'Eliane', role: 'Recursos Humanos', photoUrl: 'https://lh3.googleusercontent.com/d/1Q1S8zHg8rvX68JMf24STunLKlvJpE-vB', objectPosition: 'center 35%', zoom: 1.15, email: 'lelhis@seed.pr.gov.br' },
-                        { id: 'joao_marcelo', name: 'João Marcelo', role: 'Técnico Administrativo', photoUrl: 'https://lh3.googleusercontent.com/d/1FevV_SW1ugVwlpp0IMmvc2TfvLJytOLd', email: 'joao.marcello.oliveira@seed.pr.gov.br' },
-                        { id: 'jose', name: 'José', role: 'Analista de Dados', photoUrl: 'https://lh3.googleusercontent.com/d/1qc0jnH2pjOtYtZuH09V79Hz5MSDxu6qY', email: 'jose.heleodoro@seed.pr.gov.br' }
-                    ]
-                },
-                {
-                    id: 'c3',
-                    title: 'CAFF',
-                    coordinator: 'Leandro',
-                    role: 'Coordenação de Acompanhamento e Feedback Formativo',
-                    color: COLORS.orange,
-                    photoUrl: 'https://lh3.googleusercontent.com/d/1JjNGYUJxp4lkFxl3r-xCHp3_GnaDg26Q',
-                    objectPosition: 'center 15%',
-                    email: 'legaspareti@seed.pr.gov.br',
-                    columns: 2, 
-                    team: [
-                        { id: 'hilmar', name: 'Hilmar', role: ' Assessor da CAFF', photoUrl: 'https://lh3.googleusercontent.com/d/1qQCEQo66ztFE2Pp-waeOboDYgl-3P8xm', objectPosition: 'center 15%', email: 'juniorxavier@seed.pr.gov.br' },
-                        { id: 'alessandra', name: 'ALESSANDRA', role: 'Pedagoga', photoUrl: 'https://lh3.googleusercontent.com/d/1pw2WoiUXIuxu-YJN4BlhiouOE09BmCi3', objectPosition: 'center 15%', email: 'alecarpen@seed.pr.gov.br' },
-                        { id: 'dayane', name: 'DAYANE', role: 'Técnica de Língua Portuguesa', photoUrl: 'https://lh3.googleusercontent.com/d/1wHcGzElwFfDze_YCwdksh03NdyZvM9td', objectPosition: 'center 25%', zoom: 1.1, email: 'dayanecopati@seed.pr.gov.br' },
-                        { id: 'debora', name: 'DÉBORA', role: 'Pedagoga', photoUrl: 'https://lh3.googleusercontent.com/d/1jmxRC37DxhPr7H506PCva93jcnS_MzsV', objectPosition: 'center 15%', email: 'deholm@seed.pr.gov.br' },
-                        { id: 'delza', name: 'MARINA', role: 'Técnica de História', photoUrl: 'https://lh3.googleusercontent.com/d/1aPhyoo9MNi0zEc9B8G3BCcB1wq6IM6eK', objectPosition: 'center 15%', email: 'marinavale@seed.pr.gov.br' },
-                        { id: 'denise_caff', name: 'DENISE', role: 'Técnica de Educação Física', photoUrl: 'https://lh3.googleusercontent.com/d/1bE9ze3GRIlRYtdwpWTHau_ibbAnbNM-_', objectPosition: 'center 15%', email: 'medeirosdenise@seed.pr.gov.br' },
-                        { id: 'dina', name: 'DINÁ', role: 'Técnica de Língua Portuguesa', photoUrl: 'https://lh3.googleusercontent.com/d/13Uqm6cqF1Gy-z5jYPbXTgJBKBYE3NMvu', objectPosition: 'center 15%', email: 'dinaolli@seed.pr.gov.br' },
-                        { id: 'gabriel_caff', name: 'Gabriel Curty', role: 'Técnico de Química', photoUrl: 'https://lh3.googleusercontent.com/d/1_W-8MzKu7q8tqvZuhrOpf5zMwVXxA2Us', objectPosition: 'center 15%', email: 'gcurti@seed.pr.gov.br' },
-                        { id: 'marcio', name: 'MÁRCIO', role: 'Técnico de Sociologia', photoUrl: 'https://lh3.googleusercontent.com/d/1HBtFTkIdaRKpQOu8QuvSSz7Ef6C_PTal', objectPosition: 'center 15%', email: 'mjukoski@seed.pr.gov.br' },
-                        { id: 'michelle_caff', name: 'MICHELLE', role: 'Técnica de Física / Tecnologia', photoUrl: 'https://lh3.googleusercontent.com/d/1Ax3I7aIr1UQ2QGlflrxNJhkY75D9hiwS', objectPosition: 'center 25%', zoom: 1.15, email: 'michellesantos@seed.pr.gov.br' },
-                        { id: 'ramiel', name: 'RAMIEL', role: 'Técnico de Geografia', photoUrl: 'https://lh3.googleusercontent.com/d/1QQZKscsoc8McJcTf_JCl21GN1MhKTf3x', objectPosition: 'center 15%', email: 'ramiel@seed.pr.gov.br' }
-                    ]
-                }
-            ]
-        };
+            {
+                id: 'b1_q2',
+                text: '2. **Conexão Teoria-Prática:** As escolhas metodológicas aplicadas na intervenção foram devidamente justificadas no texto com base nos referenciais e estudos realizados no exterior?'
+            },
+            {
+                id: 'b1_q3',
+                text: '3. **Análise Crítica das Adaptações:** Descrevi de forma analítica e detalhada as adaptações necessárias para transpor a realidade pedagógica canadense para o contexto escolar público paranaense?'
+            },
+            {
+                id: 'b1_q4',
+                text: '4. **Vocabulário Científico:** Utilizei conceitos e terminologias extraídas diretamente das formações e dos materiais de estudo recebidos no Canadá, relacionando-os a outros referenciais teóricos?'
+            }
+        ]
+    },
 
-        const Modal = ({ person, color, onClose }) => {
-            if (!person) return null;
-            return (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden relative">
-                        <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors z-10"><IconX /></button>
-                        <div className="h-32 w-full" style={{ backgroundColor: color || COLORS.purple }}></div>
-                        <div className="px-8 pb-10 flex flex-col items-center -mt-16 text-center">
-                            <div className="w-32 h-32 rounded-full border-8 border-white shadow-xl overflow-hidden bg-white mb-4">
-                                <img src={person.photoUrl} alt={person.name} className="w-full h-full object-cover" style={{ objectPosition: person.objectPosition || 'center 15%', transform: `scale(${person.zoom || 1})` }} />
-                            </div>
-                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-tight">{person.name}</h2>
-                            <p className="text-sm font-black uppercase tracking-widest mt-1" style={{ color: color || COLORS.purple }}>{person.role}</p>
-                            <div className="mt-8 w-full">
-                                <div className="flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all text-left">
-                                    <div className="p-3 rounded-xl bg-white shadow-sm text-slate-400"><IconMail /></div>
-                                    <div className="overflow-hidden">
-                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">E-mail Institucional</p>
-                                        <p className="text-sm font-bold text-slate-700 break-all">{person.email || 'Não informado'}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <button onClick={onClose} className="mt-8 w-full py-4 rounded-2xl bg-slate-900 text-white font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-800 shadow-lg transition-all active:scale-95">Fechar Detalhes</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
+    bloco2: {
+        id: 'bloco2',
+        questions: [
+            {
+                id: 'b2_q1',
+                text: '1. **Título do Trabalho:** É claro, conciso, reflete diretamente a intervenção executada e possui no máximo 3 linhas?'
+            },
+            {
+                id: 'b2_q2',
+                text: '2. **Resumo:** Contém contextualização curta do tema, objetivo, método de pesquisa e principais resultados alcançados?'
+            },
+            {
+                id: 'b2_q3',
+                text: '3. **Palavras-chave:** Indiquei entre 3 e 5 termos representativos do trabalho?'
+            },
+            {
+                id: 'b2_q4',
+                text: '4. **Alinhamento da Introdução:** Apresentei de forma clara o tema, contexto da situação-problema, o(s) objetivo(s) do estudo e a proposta metodológica de forma coerente?'
+            },
+            {
+                id: 'b2_q5',
+                text: '5. **Metodologia Científica:** Expliquei como, em quanto tempo, a intervenção ocorreu contemplando a descrição de ações diagnósticas, de soluções para a situação-problema e as expectativas de resultados.'
+            },
+            {
+                id: 'b2_q6',
+                text: '6. **Resultados e Discussão:** Apresentei discussão sobre os processos avaliativos formativos da mediação, indicando as adaptações e ajustes realizados durante o  desenvolvimento da intervenção e seus impactos visíveis, como dados e evidências da aprendizagem?'
+            },
+            {
+                id: 'b2_q7',
+                text: '7. **Considerações Finais:** O objetivo citado na introdução é efetivamente respondido nas considerações finais? Contempla reflexões sobre os resultados, indicando possíveis ajustes e/ou reverberações do projeto.'
+            }
+        ]
+    },
 
-        const PersonCard = ({ person, color, searchTerm, onClick }) => {
-            const matches = searchTerm && (person.name.toLowerCase().includes(searchTerm.toLowerCase()) || person.role.toLowerCase().includes(searchTerm.toLowerCase()));
-            return (
-                <div onClick={() => onClick(person, color)} className={`flex items-center gap-3 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm transition-all h-full w-full cursor-pointer group ${matches ? 'ring-4 ring-pink-500 scale-[1.03] z-10 shadow-pink-100' : 'hover:border-slate-300 hover:shadow-md active:scale-95'}`}>
-                    <div className="w-14 h-14 rounded-full border-2 border-slate-100 overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform" style={{ borderColor: color || COLORS.slate }}>
-                        <img src={person.photoUrl} alt={person.name} className="w-full h-full object-cover transition-transform" style={{ objectPosition: person.objectPosition || 'center 15%', transform: `scale(${person.zoom || 1})` }} />
-                    </div>
-                    <div className="overflow-hidden">
-                        <h4 className="font-extrabold text-slate-800 text-[11px] uppercase leading-tight truncate">{person.name}</h4>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tight mt-0.5">{person.role}</p>
-                    </div>
-                </div>
-            );
-        };
+    bloco3: {
+        id: 'bloco3',
+        questions: [
+            {
+                id: 'b3_q1',
+                text: '1. **Limites de Extensão e Formato:** O texto possui entre 4 e 6 páginas e está estruturado em fonte Arial 12, com espaçamento de 1,15 e alinhamento justificado, estando pronto para envio exclusivamente em formato editável (.doc)?'
+            },
+            {
+                id: 'b3_q2',
+                text: '2. **Dados e Evidências Práticas:** Foram incorporados indícios quantitativos ou qualitativos (como análises de produções dos estudantes ou tabelas imprescindíveis) que comprovem avanços reais na aprendizagem do público-alvo?'
+            },
+            {
+                id: 'b3_q3',
+                text: '3. **Citações Curtas e Longas:** Apliquei as regras na norma padrão de citações curtas, longas?'
+            },
+            {
+                id: 'b3_q4',
+                text: '4. **Padronização de Citações e Referências:** Todas as fontes utilizadas ao longo do texto foram listadas ao final em ordem alfabética, seguindo estritamente as normas da ABNT NBR 6023/2002 (espaço simples, alinhadas apenas à esquerda)?'
+            },
+            {
+                id: 'b3_q5',
+                text: '5. **Evidências:** se houver tabelas/imagens, possuem título, fonte e análise?'
+            }
+        ]
+    }
 
-        const CoordinationColumn = ({ coord, searchTerm, onSelect }) => {
-            const [isExpanded, setIsExpanded] = useState(true);
-            const gridColsClass = coord.columns === 2 ? 'grid-cols-2' : 'grid-cols-1';
-            const isSingle = coord.columns === 1;
+};
 
-            return (
-                <div className={`flex flex-col gap-6 w-full ${isSingle ? 'max-w-[420px] mx-auto' : ''} print:max-w-none`}>
-                    <div style={{ borderTop: `8px solid ${coord.color}` }} className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 h-full flex flex-col items-center text-center cursor-pointer hover:shadow-2xl transition-shadow group print:shadow-none print:border-t-4" onClick={() => onSelect({ ...coord }, coord.color)}>
-                        <div style={{ borderColor: coord.color }} className="w-24 h-24 rounded-full border-4 overflow-hidden mb-4 shadow-inner group-hover:scale-105 transition-transform">
-                            <img src={coord.photoUrl} alt={coord.coordinator} className="w-full h-full object-cover" style={{ objectPosition: coord.objectPosition || 'center 15%', transform: `scale(${coord.zoom || 1})` }} />
-                        </div>
-                        <h2 className="text-2xl font-black text-slate-800 uppercase leading-none tracking-tighter">{coord.coordinator}</h2>
-                        <span className="mt-2 px-4 py-1 rounded-full text-[11px] font-black text-white uppercase tracking-widest" style={{ backgroundColor: coord.color }}>{coord.title}</span>
-                        <p className="mt-4 text-xs text-slate-400 font-bold uppercase min-h-[3em]">{coord.role}</p>
-                        <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="mt-6 w-full flex items-center justify-center gap-2 py-3 border-t border-slate-50 text-slate-400 hover:text-slate-600 transition-colors print:hidden">
-                            <span className="text-xs font-black uppercase tracking-widest">{isExpanded ? 'Recolher Equipe' : `Ver Equipe (${coord.team.length})`}</span>
-                            {isExpanded ? <IconChevronDown /> : <IconChevronRight />}
-                        </button>
-                    </div>
-                    {isExpanded && (
-                        <div className={`grid ${gridColsClass} gap-3 print:grid-cols-1`}>
-                            {coord.team.map(member => <PersonCard key={member.id} person={member} color={coord.color} searchTerm={searchTerm} onClick={onSelect} />)}
-                        </div>
-                    )}
-                </div>
-            );
-        };
+const state = {
+    answers: {},
+    notes: {}
+};
 
-        function App() {
-            const [searchTerm, setSearchTerm] = useState('');
-            const [zoom, setZoom] = useState(1);
-            const [selectedPerson, setSelectedPerson] = useState(null);
-            const [selectedColor, setSelectedColor] = useState(null);
+const chartInstances = {
+    readiness: null,
+    radar: null
+};
 
-            const handleSelect = (person, color) => { setSelectedPerson(person); setSelectedColor(color); };
-            const handlePrint = () => { window.focus(); const originalZoom = zoom; setZoom(1); setTimeout(() => { try { window.print(); } catch (err) {} setZoom(originalZoom); }, 500); };
+const app = {
 
-            return (
-                <div className="min-h-screen p-6 md:p-12 print:bg-white print:p-4">
-                    <Modal person={selectedPerson} color={selectedColor} onClose={() => setSelectedPerson(null)} />
-                    <div className="max-w-[1600px] mx-auto mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-slate-300 pb-10 no-print">
-                        <div><img src="https://lh3.googleusercontent.com/d/1TTrUveR7q0bHVMk9q8t6mzhP9fdBys7b" alt="Logo" className="h-24 md:h-28 w-auto object-contain" /></div>
-                        <div className="flex flex-wrap items-center gap-6">
-                            <div className="relative group">
-                                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400"><IconSearch /></div>
-                                <input type="text" placeholder="Pesquisar..." className="pl-14 pr-8 py-4 bg-white border-2 border-slate-200 rounded-3xl w-96 focus:border-pink-400 outline-none shadow-lg transition-all text-slate-700 text-lg font-semibold" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="flex bg-white rounded-3xl border-2 border-slate-200 p-2 shadow-lg">
-                                    <button onClick={() => setZoom(Math.max(zoom - 0.1, 0.4))} className="p-3 hover:bg-slate-50 rounded-2xl"><IconZoomOut /></button>
-                                    <button onClick={() => setZoom(1)} className="p-3 font-black text-xs text-slate-400 px-5 uppercase">100%</button>
-                                    <button onClick={() => setZoom(Math.min(zoom + 0.1, 1.5))} className="p-3 hover:bg-slate-50 rounded-2xl"><IconZoomIn /></button>
-                                </div>
-                                <button onClick={handlePrint} className="p-5 bg-slate-900 text-white rounded-3xl shadow-xl hover:bg-slate-800 active:scale-95 group"><IconPrinter /></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }} className="max-w-[1600px] mx-auto w-full print-full">
-                        <div className="flex flex-col items-center mb-24 relative">
-                            <div style={{ borderTop: `10px solid ${COLORS.purple}` }} className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-200 text-center w-[450px] relative z-10 cursor-pointer print:shadow-none print:border-t-4" onClick={() => handleSelect(initialData.chief, COLORS.purple)}>
-                                <div className="w-36 h-36 rounded-full border-8 border-white shadow-xl overflow-hidden mx-auto -mt-24 mb-6">
-                                    <img 
-                                        src={initialData.chief.photoUrl} 
-                                        alt="Gilmara" 
-                                        className="w-full h-full object-cover transition-transform duration-500" 
-                                        style={{ 
-                                            objectPosition: initialData.chief.objectPosition,
-                                            transform: `scale(${initialData.chief.zoom || 1})`
-                                        }} 
-                                    />
-                                </div>
-                                <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">{initialData.chief.name}</h1>
-                                <p className="text-lg font-black text-purple-600 uppercase tracking-widest mt-2">{initialData.chief.role}</p>
-                                <div className="mt-10 flex flex-col gap-3 border-t border-slate-100 pt-8 text-left" onClick={(e) => e.stopPropagation()}>
-                                    <span className="text-xs font-black text-slate-300 uppercase tracking-[0.3em] text-center block mb-4">Núcleo de Assessoria</span>
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {initialData.chief.staff.map(person => <PersonCard key={person.id} person={person} color={COLORS.purple} searchTerm={searchTerm} onClick={handleSelect} />)}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="absolute top-full h-24 w-1.5 bg-slate-200 left-1/2 -translate-x-1/2 no-print" />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative items-start justify-items-center print:block">
-                            <div className="hidden md:block absolute -top-12 left-[16.6%] right-[16.6%] h-1.5 bg-slate-200 no-print" />
-                            {initialData.coordinations.map(coord => (
-                                <div key={coord.id} className="relative flex justify-center w-full print:block print:mb-12">
-                                    <div className="hidden md:block absolute -top-12 left-1/2 -translate-x-1/2 h-12 w-1.5 bg-slate-200 no-print" />
-                                    <CoordinationColumn coord={coord} searchTerm={searchTerm} onSelect={handleSelect} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
+    init() {
+        this.renderForms();
+        this.initCharts();
+        this.updateGlobalState();
+    },
+
+    navigate(viewId) {
+
+        document.querySelectorAll('.view-section').forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('block');
+        });
+
+        const targetView = document.getElementById(`view-${viewId}`);
+
+        if (targetView) {
+            targetView.classList.remove('hidden');
+            targetView.classList.add('block');
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        const activeBtn = Array.from(document.querySelectorAll('.tab-btn'))
+            .find(btn => btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(viewId));
+
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+
+        if (viewId === 'dashboard') {
+            this.updateCharts();
+        }
+    },
+
+    renderForms() {
+
+        Object.values(appData).forEach(block => {
+
+            const container = document.getElementById(`content-${block.id}`);
+
+            if (!container) return;
+
+            let html = '';
+
+            block.questions.forEach(q => {
+
+                html += `
+                    <div class="bg-white p-5 border border-gray-200 rounded-xl hover:shadow-md transition-shadow">
+
+                        <p class="text-gray-800 font-medium text-lg leading-snug mb-4">
+                            ${this.formatBold(q.text)}
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row gap-3 mt-3 no-print">
+
+                            <div class="flex-1">
+                                <input type="radio"
+                                       id="${q.id}_yes"
+                                       name="${q.id}"
+                                       value="yes"
+                                       class="hidden radio-custom"
+                                       onchange="app.handleInput('${q.id}', 'yes', '${block.id}')">
+
+                                <label for="${q.id}_yes"
+                                       class="block text-center px-4 py-2 border border-gray-300 rounded-md cursor-pointer">
+                                    Sim
+                                </label>
+                            </div>
+
+                            <div class="flex-1">
+                                <input type="radio"
+                                       id="${q.id}_partial"
+                                       name="${q.id}"
+                                       value="partial"
+                                       class="hidden radio-custom-partial"
+                                       onchange="app.handleInput('${q.id}', 'partial', '${block.id}')">
+
+                                <label for="${q.id}_partial"
+                                       class="block text-center px-4 py-2 border border-gray-300 rounded-md cursor-pointer">
+                                    Em partes
+                                </label>
+                            </div>
+
+                            <div class="flex-1">
+                                <input type="radio"
+                                       id="${q.id}_no"
+                                       name="${q.id}"
+                                       value="no"
+                                       class="hidden radio-custom-no"
+                                       onchange="app.handleInput('${q.id}', 'no', '${block.id}')">
+
+                                <label for="${q.id}_no"
+                                       class="block text-center px-4 py-2 border border-gray-300 rounded-md cursor-pointer">
+                                    Não
+                                </label>
+                            </div>
+
+                        </div>
+
+                        <div class="mt-4">
+                            <textarea
+                                id="textarea_${q.id}"
+                                class="w-full h-20 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm resize-y no-print"
+                                placeholder="Dúvidas sobre este tópico? Escreva aqui para o seu mentor"
+                                oninput="app.saveNote('${q.id}', this.value)"></textarea>
+                            <div id="print_note_${q.id}" class="print-only-container"></div>
+                        </div>
+
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        });
+    },
+
+    formatBold(text) {
+        return text.replace(/\*\*(.*?)\*\*/g,
+            '<span class="font-bold text-teal-800">$1</span>');
+    },
+
+    handleInput(qId, value, blockId) {
+        state.answers[qId] = { value, blockId };
+        this.updateGlobalState();
+    },
+
+    saveNote(qId, val) {
+        state.notes[qId] = val;
+        // Sincroniza dinamicamente o valor para a div de impressão
+        const printDiv = document.getElementById(`print_note_${qId}`);
+        if (printDiv) {
+            printDiv.innerText = val ? "Dúvidas/Observações anotadas: " + val : "";
+        }
+    },
+
+    updateGlobalState() {
+
+        const totalQuestions =
+            Object.values(appData)
+            .reduce((acc, block) => acc + block.questions.length, 0);
+
+        const answeredCount = Object.keys(state.answers).length;
+
+        const progressPct =
+            Math.round((answeredCount / totalQuestions) * 100);
+
+        document.getElementById('global-progress-bar').style.width =
+            `${progressPct}%`;
+
+        document.getElementById('global-progress-text').innerText =
+            `${progressPct}% Concluído (${answeredCount}/${totalQuestions})`;
+
+        this.updateCharts();
+    },
+
+    getChartData() {
+
+        let counts = {
+            yes: 0,
+            partial: 0,
+            no: 0,
+            unanswered: 0
+        };
+
+        let blockScores = {
+            bloco1: 0,
+            bloco2: 0,
+            bloco3: 0
+        };
+
+        let blockMax = {
+            bloco1: 0,
+            bloco2: 0,
+            bloco3: 0
+        };
+
+        const totalQuestions =
+            Object.values(appData)
+            .reduce((acc, block) => acc + block.questions.length, 0);
+
+        counts.unanswered = totalQuestions;
+
+        Object.values(appData).forEach(block => {
+
+            block.questions.forEach(q => {
+
+                blockMax[block.id] += 2;
+
+                if (state.answers[q.id]) {
+
+                    counts.unanswered--;
+
+                    const val = state.answers[q.id].value;
+
+                    counts[val]++;
+
+                    if (val === 'yes') {
+                        blockScores[block.id] += 2;
+                    }
+
+                    if (val === 'partial') {
+                        blockScores[block.id] += 1;
+                    }
+
+                }
+
+            });
+
+        });
+
+        return {
+            counts,
+            radarData: [
+                Math.round((blockScores.bloco1 / (blockMax.bloco1 || 1)) * 100),
+                Math.round((blockScores.bloco2 / (blockMax.bloco2 || 1)) * 100),
+                Math.round((blockScores.bloco3 / (blockMax.bloco3 || 1)) * 100)
+            ]
+        };
+    },
+
+    initCharts() {
+        try {
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js não está carregado. Gráficos desabilitados para prevenir falha estrutural.');
+                return;
+            }
+
+            const readinessCanvas =
+                document.getElementById('readinessChart');
+
+            const radarCanvas =
+                document.getElementById('radarChart');
+
+            if (!readinessCanvas || !radarCanvas) return;
+
+            chartInstances.readiness = new Chart(
+                readinessCanvas.getContext('2d'),
+                {
+                    type: 'doughnut',
+                    data: {
+                        labels: [
+                            'Adequado',
+                            'Em progresso',
+                            'Crítico',
+                            'Não avaliado'
+                        ],
+                        datasets: [{
+                            data: [0,0,0,100],
+                            backgroundColor: [
+                                '#0f766e',
+                                '#b45309',
+                                '#b91c1c',
+                                '#e2e8f0'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                }
+            );
+
+            chartInstances.radar = new Chart(
+                radarCanvas.getContext('2d'),
+                {
+                    type: 'radar',
+                    data: {
+                        labels: [
+                            'Transposição',
+                            'Estrutura',
+                            'Formatação'
+                        ],
+                        datasets: [{
+                            label: 'Desempenho Atual (%)',
+                            data: [0,0,0],
+                            backgroundColor: 'rgba(15,118,110,0.2)',
+                            borderColor: '#0f766e',
+                            pointBackgroundColor: '#0f766e'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                }
+            );
+        } catch (e) {
+            console.error('Falha de inicialização dos gráficos ignorada para evitar quebras:', e);
+        }
+    },
+
+    updateCharts() {
+        try {
+            if (typeof Chart === 'undefined' || !chartInstances.readiness || !chartInstances.radar) return;
+
+            const data = this.getChartData();
+
+            chartInstances.readiness.data.datasets[0].data = [
+                data.counts.yes,
+                data.counts.partial,
+                data.counts.no,
+                data.counts.unanswered
+            ];
+
+            chartInstances.readiness.update();
+
+            chartInstances.radar.data.datasets[0].data =
+                data.radarData;
+
+            chartInstances.radar.update();
+        } catch (e) {
+            console.error('Falha de atualização dos gráficos ignorada para evitar quebras:', e);
+        }
+    },
+
+    triggerPrint() {
+        try {
+            window.print();
+        } catch (e) {
+            console.warn("Falha ao invocar comando automático de impressão. Ativando modal de ajuda manual:", e);
+            const fallbackModal = document.getElementById("printFallbackModal");
+            if (fallbackModal) {
+                fallbackModal.classList.remove("hidden");
+            }
+        }
+    }
+
+};
+
+// Inicialização segura
+const runInit = () => {
+    app.init();
+    const printButton = document.getElementById("printButton");
+    if (printButton) {
+        printButton.addEventListener("click", () => {
+            app.triggerPrint();
+        });
+    }
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runInit);
+} else {
+    runInit();
+}
+
+</script>
+
 </body>
 </html>
